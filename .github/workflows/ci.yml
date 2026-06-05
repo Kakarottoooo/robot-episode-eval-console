@@ -46,6 +46,12 @@ jobs:
       - name: Compile Python modules
         run: python -m compileall backend robot scripts
 
+      - name: Run safety unit tests
+        run: python -m unittest discover -s tests
+
+      - name: Run safety checker example
+        run: python scripts/safety_check_example.py
+
       - name: Seed demo data into PostgreSQL
         run: python scripts/seed_demo_data.py
 

@@ -4,7 +4,7 @@
 
 An end-to-end Robot Episode Data Pipeline + Evaluation Console for recording robot episodes, storing structured metadata, running mock evaluation jobs, loading saved episodes with a PyTorch-style Dataset, and inspecting results in a web console.
 
-The MVP uses a mock robot environment first. It keeps clean adapter boundaries for XLeRobot and physical manipulator integration without assuming hardware is available.
+The MVP uses a mock robot environment first. It also includes a safety-first physical robot adapter skeleton for future XLeRobot or manipulator integration without assuming hardware is available.
 
 ## Demo Screenshots
 
@@ -28,6 +28,7 @@ The MVP uses a mock robot environment first. It keeps clean adapter boundaries f
 
 ```text
 Mock/XLeRobot/Physical Robot
+  -> SafetyChecker + PhysicalArmAdapter
   -> EpisodeRecorder
   -> data/episodes/<episode_id>/{states,actions,rewards,timestamps,metadata}
   -> PostgreSQL metadata
@@ -208,14 +209,14 @@ The dataset supports filters for `task_name`, `policy_name`, and `success`. Epis
 
 GitHub Actions runs two checks:
 
-- Backend + PostgreSQL: installs Python dependencies, compiles backend/robot/scripts, seeds demo data into a PostgreSQL service, and runs the DataLoader example.
+- Backend + PostgreSQL: installs Python dependencies, compiles backend/robot/scripts, runs safety tests, seeds demo data into a PostgreSQL service, and runs the DataLoader example.
 - Frontend: installs dependencies with `npm ci`, audits production dependencies, typechecks, and builds the Next.js console.
 
 Workflow file: `.github/workflows/ci.yml`.
 
 ## Current Phase
 
-The MVP covers Phase 1 through Phase 6:
+The MVP covers Phase 1 through Phase 6 and has started the Phase 7 hardware integration skeleton:
 
 - FastAPI backend, Next.js frontend, PostgreSQL compose setup
 - Episode metadata CRUD and episode detail API
@@ -223,8 +224,34 @@ The MVP covers Phase 1 through Phase 6:
 - Evaluation metrics and experiment summaries
 - Web console for dashboard, episodes, detail, and policy comparison
 - PyTorch-compatible `RobotEpisodeDataset`, DataLoader example, and dataset export
+- Safety-first `PhysicalArmAdapter` skeleton, safety checks, and manual episode labeling tool
 
-Phase 7 is intentionally not implemented yet. The next milestone is a physical robot adapter with camera capture, safety checks, manual labels, and real `real_robot` trial collection.
+Phase 7 is not connected to real hardware yet. The next milestone is implementing a hardware-specific adapter subclass with camera capture, state reading, command publishing, and 10 low-speed `real_robot` trials.
+
+## Physical Robot Adapter Skeleton
+
+The hardware-facing code starts with explicit safety gates:
+
+```text
+robot/adapters/physical_arm_adapter.py
+robot/safety/checks.py
+scripts/safety_check_example.py
+scripts/label_episode.py
+```
+
+Run the safety example:
+
+```powershell
+python scripts\safety_check_example.py
+```
+
+Manually label an episode after a real-world or reviewed trial:
+
+```powershell
+python scripts\label_episode.py --episode-id episode_000001 --success false --failure-reason grasp_failure
+```
+
+Use `--require-db` when the label must also sync to PostgreSQL.
 
 ## Safety Notes for Physical Robots
 
